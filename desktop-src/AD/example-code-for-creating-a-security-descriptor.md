@@ -25,7 +25,7 @@ The caller must have permission to create the object in the parent container.
 ## PowerShell
 
 > [!NOTE]
-> For most Active Directory administration tasks in PowerShell, use the **ActiveDirectory PowerShell module**. It provides cmdlets for managing Active Directory objects, accounts, domains, forests, and related configuration. See [Active Directory module documentation](https://learn.microsoft.com/en-us/powershell/module/activedirectory/about/about_activedirectory).
+> For most Active Directory administration tasks in PowerShell, use the **ActiveDirectory PowerShell module**. It provides cmdlets for managing Active Directory objects, accounts, domains, forests, and related configuration. See [Active Directory module documentation](/powershell/module/activedirectory/about/about_activedirectory).
 >
 > ADSI provides lower-level access to Active Directory and is useful when the required operation is not directly exposed by the ActiveDirectory module or when direct access to ADSI interfaces is required.
 
@@ -363,7 +363,7 @@ int wmain() {
 
 The C++ example uses `IADsContainer::Create` to prepare the new directory object in the ADSI property cache. It then creates `CLSID_SecurityDescriptor`, `CLSID_AccessControlList`, and `CLSID_AccessControlEntry` COM objects and assigns the completed security descriptor before calling `IADs::SetInfo`.
 
-For more information, see [Creating Security Descriptors for New Directory Objects](https://learn.microsoft.com/en-us/windows/win32/ad/creating-a-security-descriptor-for-a-new-directory-object), [IADsContainer::Create](https://learn.microsoft.com/en-us/windows/win32/api/iads/nf-iads-iadscontainer-create), [IADsSecurityDescriptor](https://learn.microsoft.com/en-us/windows/win32/api/iads/nn-iads-iadssecuritydescriptor), and [IADsAccessControlEntry](https://learn.microsoft.com/en-us/windows/win32/api/iads/nn-iads-iadsaccesscontrolentry).
+For more information, see [Creating Security Descriptors for New Directory Objects](creating-a-security-descriptor-for-a-new-directory-object.md), [IADsContainer::Create](/windows/win32/api/iads/nf-iads-iadscontainer-create), [IADsSecurityDescriptor](/windows/win32/api/iads/nn-iads-iadssecuritydescriptor), and [IADsAccessControlEntry](/windows/win32/api/iads/nn-iads-iadsaccesscontrolentry).
 
 ## Security Descriptor Contents
 
@@ -379,7 +379,7 @@ The examples set `ADS_SD_CONTROL_SE_DACL_PRESENT` but do not set `ADS_SD_CONTROL
 
 When a security descriptor is explicitly supplied during creation of an Active Directory object, Active Directory Domain Services merges inheritable ACEs from the parent into the new object's DACL unless the DACL is protected.
 
-See [How Security Descriptors are Set on New Directory Objects](https://learn.microsoft.com/en-us/windows/win32/ad/how-security-descriptors-are-set-on-new-directory-objects).
+See [How Security Descriptors are Set on New Directory Objects](how-security-descriptors-are-set-on-new-directory-objects.md).
 
 ## ACE Ordering
 
@@ -387,7 +387,7 @@ ACE order affects access evaluation. Explicit deny ACEs normally precede explici
 
 The examples create only one explicit ACE. Applications that construct DACLs containing multiple ACEs should add them in canonical order.
 
-See [Order of ACEs in a DACL](https://learn.microsoft.com/en-us/windows/win32/secauthz/order-of-aces-in-a-dacl).
+See [Order of ACEs in a DACL](../SecAuthZ/order-of-aces-in-a-dacl.md).
 
 ## Existing Objects
 
@@ -395,7 +395,7 @@ A newly created ADSI security descriptor can also be assigned to the `nTSecurity
 
 For routine permission changes on existing objects, retrieve the current security descriptor and modify its DACL instead of constructing a replacement descriptor. This preserves unrelated access-control information.
 
-See [Setting Access Rights on an Object](https://learn.microsoft.com/en-us/windows/win32/ad/setting-access-rights-on-an-object).
+See [Setting Access Rights on an Object](setting-access-rights-on-an-object.md).
 
 ## Empty and NULL DACLs
 
