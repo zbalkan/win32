@@ -1,12 +1,12 @@
 ---
 title: Example Code for Creating a Security Descriptor
-description: This topic includes PowerShell and C++ code examples that show how to create a security descriptor for an Active Directory object using ADSI.
+description: This topic includes PowerShell, C++, and legacy Visual Basic 6.0 code examples that show how to create a security descriptor for a new Active Directory object using ADSI.
 ms.assetid: 7c6dcdaf-0bef-4f72-bd9d-dc3ab4295008
 ms.tgt_platform: multiple
 keywords:
 - Example Code for Creating a Security Descriptor
 ms.topic: reference
-ms.date: 09/15/2026
+ms.date: 09/20/2026
 topic_type: 
 - kbArticle
 api_name: 
@@ -16,18 +16,12 @@ api_location:
 
 # Example Code for Creating a Security Descriptor
 
-The following examples show how to use Active Directory Service Interfaces (ADSI) to create a security descriptor for a new Active Directory object.
-
-The examples create a new organizational unit, build a security descriptor with a discretionary access-control list (DACL), add an access-control entry (ACE), and assign the security descriptor before the new object is committed to Active Directory.
-
-The caller must have permission to create the object in the parent container.
+The following examples use Active Directory Service Interfaces (ADSI) to create a new organizational unit, build a security descriptor whose discretionary access-control list (DACL) contains one access-control entry (ACE), and assign that security descriptor before the object is committed to Active Directory. The caller must have permission to create objects in the parent container.
 
 ## PowerShell
 
 > [!NOTE]
-> For most Active Directory administration tasks in PowerShell, use the **ActiveDirectory PowerShell module**. It provides cmdlets for managing Active Directory objects, accounts, domains, forests, and related configuration. See [Active Directory module documentation](/powershell/module/activedirectory/about/about_activedirectory).
->
-> ADSI provides lower-level access to Active Directory and is useful when the required operation is not directly exposed by the ActiveDirectory module or when direct access to ADSI interfaces is required.
+> For routine Active Directory administration, the [ActiveDirectory PowerShell module](/powershell/module/activedirectory/about/about_activedirectory) is usually simpler. This example calls the ADSI COM interfaces directly so that it mirrors the C++ example.
 
 ```powershell
 # ADSI constants.
@@ -41,8 +35,7 @@ $ACL_REVISION_DS                    = 0x04
 $parentPath   = 'LDAP://DC=Fabrikam,DC=com'
 $relativeName = 'OU=Sales'
 
-# Owner of the new object and trustee that receives the ACE.
-$owner   = 'FABRIKAM\Administrator'
+# Trustee that receives the ACE.
 $trustee = 'FABRIKAM\Security Readers'
 
 $container          = $null
@@ -83,9 +76,9 @@ try {
 
     $dacl.AddAce($ace)
 
-    # Configure the new security descriptor.
+    # Configure the new security descriptor. The owner is not set,
+    # so Active Directory assigns the default owner.
     $securityDescriptor.Revision = 1
-    $securityDescriptor.Owner = $owner
     $securityDescriptor.Control =
         $ADS_SD_CONTROL_SE_DACL_PRESENT
     $securityDescriptor.DiscretionaryAcl = $dacl
@@ -100,7 +93,10 @@ try {
     $newObject.SetInfo()
 }
 catch {
-    throw "Unable to create '$relativeName': $($_.Exception.Message)"
+    throw [System.InvalidOperationException]::new(
+        "Unable to create '$relativeName'.",
+        $_.Exception
+    )
 }
 finally {
     foreach ($comObject in @(
@@ -124,7 +120,7 @@ finally {
 
 ## C++
 
-The same ADSI interfaces can be accessed directly from C++. The following example performs the same operation as the PowerShell example.
+The following example performs the same operation by calling the ADSI interfaces directly from C++.
 
 ```cpp
 #include <windows.h>
@@ -141,11 +137,9 @@ The same ADSI interfaces can be accessed directly from C++. The following exampl
 HRESULT CreateOuWithSecurityDescriptor(
     const wchar_t* parent_path,
     const wchar_t* relative_name,
-    const wchar_t* owner,
     const wchar_t* trustee) {
   if (parent_path == nullptr ||
       relative_name == nullptr ||
-      owner == nullptr ||
       trustee == nullptr) {
     return E_INVALIDARG;
   }
@@ -275,15 +269,9 @@ HRESULT CreateOuWithSecurityDescriptor(
     return E_NOINTERFACE;
   }
 
-  // Configure the new security descriptor.
+  // Configure the new security descriptor. The owner is not set,
+  // so Active Directory assigns the default owner.
   hr = security_descriptor->put_Revision(1);
-
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  hr = security_descriptor->put_Owner(
-      CComBSTR(owner));
 
   if (FAILED(hr)) {
     return hr;
@@ -343,7 +331,6 @@ int wmain() {
   hr = CreateOuWithSecurityDescriptor(
       L"LDAP://DC=Fabrikam,DC=com",
       L"OU=Sales",
-      L"FABRIKAM\\Administrator",
       L"FABRIKAM\\Security Readers");
 
   CoUninitialize();
@@ -361,46 +348,66 @@ int wmain() {
 }
 ```
 
-The C++ example uses `IADsContainer::Create` to prepare the new directory object in the ADSI property cache. It then creates `CLSID_SecurityDescriptor`, `CLSID_AccessControlList`, and `CLSID_AccessControlEntry` COM objects and assigns the completed security descriptor before calling `IADs::SetInfo`.
+The example uses [IADsContainer::Create](/windows/win32/api/iads/nf-iads-iadscontainer-create) to prepare the new object in the ADSI property cache, builds the security descriptor from `CLSID_SecurityDescriptor`, `CLSID_AccessControlList`, and `CLSID_AccessControlEntry` objects, and assigns it before calling `IADs::SetInfo`. For more information, see [Creating Security Descriptors for New Directory Objects](creating-a-security-descriptor-for-a-new-directory-object.md), [IADsSecurityDescriptor](/windows/win32/api/iads/nn-iads-iadssecuritydescriptor), and [IADsAccessControlEntry](/windows/win32/api/iads/nn-iads-iadsaccesscontrolentry).
 
-For more information, see [Creating Security Descriptors for New Directory Objects](creating-a-security-descriptor-for-a-new-directory-object.md), [IADsContainer::Create](/windows/win32/api/iads/nf-iads-iadscontainer-create), [IADsSecurityDescriptor](/windows/win32/api/iads/nn-iads-iadssecuritydescriptor), and [IADsAccessControlEntry](/windows/win32/api/iads/nn-iads-iadsaccesscontrolentry).
+## Visual Basic 6.0
 
-## Security Descriptor Contents
+> [!NOTE]
+> This example is provided for developers who maintain existing Visual Basic 6.0 applications. Visual Basic 6.0 development and the Visual Basic 6.0 IDE are no longer supported, although the Visual Basic 6.0 runtime remains supported for existing applications for the support lifetime of the Windows versions in which it ships. For new development, use a supported language. For more information, see [Support Statement for Visual Basic 6.0 on Windows](/previous-versions/visualstudio/visual-basic-6/visual-basic-6-support-policy).
 
-The examples create a security descriptor with an explicit owner and DACL.
+The following example performs the same operation as the PowerShell and C++ examples. It requires a project reference to the Active DS Type Library.
 
-The DACL contains one explicit allow ACE that grants `ADS_RIGHT_DS_READ_PROP` to the trustee. Because no object type GUID is specified, the permission applies to all properties of the new object.
+```VB
+Dim Container As IADsContainer
+Dim NewObject As IADs
+Dim SecDes As New SecurityDescriptor
+Dim Dacl As New AccessControlList
+Dim Ace As New AccessControlEntry
 
-The examples do not create a SACL.
+On Error GoTo Cleanup
 
-## Inheritance
+' Bind to the parent container and create the new object
+' in the ADSI property cache.
+Set Container = GetObject("LDAP://DC=Fabrikam,DC=com")
+Set NewObject = Container.Create("organizationalUnit", "OU=Sales")
 
-The examples set `ADS_SD_CONTROL_SE_DACL_PRESENT` but do not set `ADS_SD_CONTROL_SE_DACL_PROTECTED`.
+' Grant Read Property permission for all properties on this object.
+Ace.Trustee = "FABRIKAM\Security Readers"
+Ace.AccessMask = ADS_RIGHT_DS_READ_PROP
+Ace.AceType = ADS_ACETYPE_ACCESS_ALLOWED
+Ace.AceFlags = 0
 
-When a security descriptor is explicitly supplied during creation of an Active Directory object, Active Directory Domain Services merges inheritable ACEs from the parent into the new object's DACL unless the DACL is protected.
+Dacl.AclRevision = ADS_SD_REVISION_DS
+Dacl.AddAce Ace
 
-See [How Security Descriptors are Set on New Directory Objects](how-security-descriptors-are-set-on-new-directory-objects.md).
+' Configure the new security descriptor. The owner is not set,
+' so Active Directory assigns the default owner.
+SecDes.Revision = 1
+SecDes.Control = ADS_SD_CONTROL_SE_DACL_PRESENT
+SecDes.DiscretionaryAcl = Dacl
 
-## ACE Ordering
+' Attach the security descriptor, then create the object
+' and commit the security descriptor.
+NewObject.Put "nTSecurityDescriptor", SecDes
+NewObject.SetInfo
 
-ACE order affects access evaluation. Explicit deny ACEs normally precede explicit allow ACEs, and explicit ACEs precede inherited ACEs.
+Cleanup:
+    If Err.Number <> 0 Then
+        MsgBox "An error has occurred: 0x" & Hex(Err.Number)
+    End If
+    Set Ace = Nothing
+    Set Dacl = Nothing
+    Set SecDes = Nothing
+    Set NewObject = Nothing
+    Set Container = Nothing
+```
 
-The examples create only one explicit ACE. Applications that construct DACLs containing multiple ACEs should add them in canonical order.
+## Resulting security descriptor
 
-See [Order of ACEs in a DACL](../SecAuthZ/order-of-aces-in-a-dacl.md).
+The supplied DACL contains one explicit allow ACE that grants `ADS_RIGHT_DS_READ_PROP` to the trustee, and because no object type GUID is specified, the permission applies to all properties of the new object. The examples set neither an owner nor a system access-control list (SACL), so Active Directory assigns the default owner from the creator's security context. The supplied DACL contains one ACE, which differs from an empty DACL (which grants no access) and from a NULL DACL (which grants unrestricted access). Code that builds security descriptors must keep these cases distinct.
 
-## Existing Objects
+Because the examples supply a DACL without setting `ADS_SD_CONTROL_SE_DACL_PROTECTED`, the new object's DACL consists of the explicit ACE followed by inheritable ACEs from the parent container. The default DACL from the `defaultSecurityDescriptor` attribute of the object's class is applied only when the creator does not supply a DACL, so the new organizational unit does not receive those default ACEs. Applications that add several explicit ACEs should add them in canonical order. For more information, see [How Security Descriptors are Set on New Directory Objects](how-security-descriptors-are-set-on-new-directory-objects.md) and [Order of ACEs in a DACL](../SecAuthZ/order-of-aces-in-a-dacl.md).
 
-A newly created ADSI security descriptor can also be assigned to the `nTSecurityDescriptor` property of an existing object. Doing so replaces the existing security descriptor information being written.
+## Modifying existing objects
 
-For routine permission changes on existing objects, retrieve the current security descriptor and modify its DACL instead of constructing a replacement descriptor. This preserves unrelated access-control information.
-
-See [Setting Access Rights on an Object](setting-access-rights-on-an-object.md).
-
-## Empty and NULL DACLs
-
-An empty DACL contains no ACEs and therefore grants no discretionary access.
-
-A NULL DACL has different semantics and permits unrestricted access.
-
-Code that creates a security descriptor must distinguish carefully between these two cases.
+A new security descriptor can also be assigned to the `nTSecurityDescriptor` property of an existing object. However, doing so replaces the security descriptor components that ADSI writes, including the entire DACL. For routine permission changes, retrieve the object's current security descriptor, add or remove ACEs in its DACL, and write it back so that unrelated access-control information is preserved. For more information, see [Setting Access Rights on an Object](setting-access-rights-on-an-object.md).
